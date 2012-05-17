@@ -1,0 +1,156 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>
+      Chatting Room
+    </title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link href="http://lib.sinaapp.com/js/bootstrap/2.0.3/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="http://lib.sinaapp.com/js/bootstrap/2.0.3/css/bootstrap-responsive.css" rel="stylesheet">
+
+    <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript" src="http://lib.sinaapp.com/js/jquery/1.7.2/jquery.min.js"></script>
+    <script type="text/javascript">
+
+var socket = io.connect('http://192.168.197.229');
+var users = {};
+
+function rewrite_user_list(ul) {
+  $("#users").empty();
+  $("#users").append('<li class="nav-header">Users</li>');
+  for (addr in ul) {
+    if (ul[addr] == 2) {
+      $("#users").append('<li>You are '+addr+"</li>");
+    }else{
+      $("#users").append('<li>'+addr+"</li>");
+    }
+  }
+}
+
+socket.on('users', function (data) {
+  users = data;
+  rewrite_user_list(users);
+});
+
+socket.on('join', function (data) {
+  users[data] = 1;
+  $("#recved").append(data + " connected. <br />");
+  rewrite_user_list(users);
+});
+
+socket.on('leave', function (data) {
+  $("#recved").append(data + " disconnected. <br />");
+  delete users[data];
+  rewrite_user_list(users);
+});
+
+socket.on('history', function (data) {
+  $("#recved").empty();
+  for(id in data) {
+    $("#recved").append(data[id] + "<br />");
+  }
+});
+
+socket.on('cast', function (data) {
+  $("#recved").append(data + "<br />");
+});
+
+socket.on('disconnect', function (data) {
+  $("#users").empty();
+});
+
+$(function() {
+  $("#msg").keypress(function(event) {
+    if(event.keyCode == 13) {
+      $('#send_btn').click();
+    }
+  });
+
+  $('#send_btn').click(function() {    
+    var msg = $('#msg')[0].value;
+    socket.emit('msg', msg);
+    $("#recved").append("You: " + msg + "<br />")
+  });
+});
+    </script>
+  </head>
+
+  <body>
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+
+        <div class="container-fluid">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="#">Chatting Room</a>
+          <div class="btn-group pull-right">
+
+            <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+              <i class="icon-user"></i> Username
+              <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu">
+              <li><a href="#">Profile</a></li>
+              <li class="divider"></li>
+              <li><a href="#">Sign Out</a></li>
+
+            </ul>
+          </div>
+          <div class="nav-collapse">
+            <ul class="nav">
+              <li class="active"><a href="#">Home</a></li>
+              <li><a href="#about">About</a></li>
+              <li><a href="#contact">Contact</a></li>
+
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+    <div class="container-fluid">
+      <div class="row-fluid">
+        <div class="span3">
+          <div class="well sidebar-nav">
+            <ul id="users" class="nav nav-list">
+              <li class="nav-header">Users</li>
+            </ul>
+
+          </div><!--/.well -->
+        </div><!--/span-->
+
+        <div class="span9">
+          <div id="recved" class="hero-unit">
+
+          </div>
+
+          <div class="form-inline">
+            <input id="msg" type="text" class="input-xxlarge" placeholder="Type something…">
+            <button type="submit" class="btn" id="send_btn">Submit</button>
+          </div>
+
+        </div><!--/span-->
+      </div><!--/row-->
+      <hr>
+
+      <footer>
+        <p>&copy; Company 2012</p>
+      </footer>
+
+    </div><!--/.fluid-container-->
+
+  </body>
+
+</html>
